@@ -1,13 +1,15 @@
 #!/usr/bin/python3
-from train import train
-from test import test
-from MLP import MLP
+from model.train import train
+from model.test import test
+from model.MLP import MLP
 import torch as to
 import torchvision as tv
 import matplotlib.pyplot as plt
 from math import sqrt
 import numpy as np
 from functools import reduce
+from itertools import islice
+import json
 
 def closed_set_accuracy(logits, labels):
     _, predictions = to.max(logits, -1)
@@ -23,7 +25,8 @@ def filter_classes(dataset, classes):
 
 device = to.device("cpu")
 models = {}
-mode = "load"
+mode = "sample"
+
 if (mode == "save"):
   for i in range(1,10):
     train_classes = range(i)
@@ -64,3 +67,13 @@ if (mode == "load"):
     acc, _ = test(model,dl_test, closed_set_accuracy, device)
     print("Testing accuracy  %f" % acc)
 
+if (mode == "sample"):
+  batch_size = 1
+  train_classes = range(9)
+  ds = tv.datasets.MNIST(root='./', train=True, transform=tv.transforms.ToTensor(), download=True)
+  ds.targets, ds.data = filter_classes(ds, train_classes)
+  dl = to.utils.data.DataLoader(ds, batch_size=batch_size, shuffle=True)
+  for x, y in islice(dl, 1):
+    x = x.view(batch_size, -1).cpu().numpy()
+    y = y.cpu().numpy()
+    print(json.dumps(x[0].tolist()))
