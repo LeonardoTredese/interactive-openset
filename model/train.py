@@ -6,9 +6,7 @@ import torch.nn.functional as F
 
 
 def forward_pass(model, x, y):
-    batch_size = x.shape[0]
     model.optimizer.zero_grad()
-    x = x.view(batch_size, -1)
     return model(x)
 
 def backward_pass(model, logits, y):
@@ -22,7 +20,7 @@ def run_epoch(model, dl, accuracy_fn, device):
     for x, y in dl:
         x, y = x.to(device), y.to(device)
         logits = forward_pass(model, x, y)
-        running_acc += [accuracy_fn(F.softmax(logits, -1), y).item()]
+        running_acc += [accuracy_fn(logits, y).item()]
         scores += [logits]
         running_loss += [backward_pass(model, logits, y)]
     return np.mean(running_loss), np.mean(running_acc), torch.cat(scores, 0)
