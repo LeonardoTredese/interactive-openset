@@ -25,10 +25,10 @@ def filter_classes(dataset, classes):
 
 device = to.device("cpu")
 models = {}
-mode = "sample"
+mode = "load"
 
 if (mode == "save"):
-  for i in range(1,10):
+  for i in range(2,11):
     train_classes = range(i)
     ds_train = tv.datasets.MNIST(root='./', train=True, transform=tv.transforms.ToTensor(), download=True)
     ds_train.targets, ds_train.data = filter_classes(ds_train, train_classes)
@@ -36,11 +36,11 @@ if (mode == "save"):
     input_dim = np.prod(ds_train.__getitem__(0)[0].shape)
     args = [input_dim]
     kwargs = {
-        'layers_size': [20, i],
+        'layers_size': [128, 128, i],
         'lr': 5e-4,
         'dropout_rate': 0.2
     }
-    model = MLP(*args,**kwargs).to(to.device('cpu'))
+    model = MLP(*args,**kwargs).to(to.device(device))
     epochs = 10
     print("Training model %d for %d epochs..." % (i, epochs))
     loss, acc, scores = train(model, dl_train, closed_set_accuracy, device, epochs = epochs)
@@ -53,7 +53,7 @@ if (mode == "save"):
 
 if (mode == "load"):
   models = to.load('./models')
-  for i in range(1,10):
+  for i in range(2,11):
     test_classes = range(i)
     ds_test = tv.datasets.MNIST(root='./', train=False, transform=tv.transforms.ToTensor(), download=True)
     ds_test.targets, ds_test.data = filter_classes(ds_test, test_classes)
