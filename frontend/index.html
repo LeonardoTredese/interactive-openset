@@ -11,10 +11,10 @@
         
         <center><h1>Draw a number in the left-hand box</h1></center>
         <div style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
-            <canvas width="280" height="280" id="canvas" style="border:1px solid black; float: left">canvas</canvas>
+            <canvas width="280" height="280" id="input" style="border:1px solid black; float: left">canvas</canvas>
             
             <div style="width: 230px; height: 280px; margin-left: auto; position:relative">
-                <input type="button" onclick="clearCanvas()" value="Clear" />
+                <input type="button" onclick="clearCanvas('input')" value="Clear" />
             </br>
                 <label for="margin">Margin</label>
                 <input type="number" id="margin" min="0.0" step="0.1" max="1.0" /> 
@@ -22,7 +22,11 @@
                 <input type="number" id="model" min="2" step="1" max="10"/>
                 <span>Read number:</span>
                 <strong id="digit" style="font-size: x-large;"></strong>
-            </div>
+        </div>
+        <div>
+            <h2>GRAD-CAM</h2>
+            <canvas width="280" height="280" id="grad-cam" style="border:1px solid black; float: left">canvas</canvas>
+        </div>
         </div>
         <h2>results</h2>
         <div id='histogram'></div>
@@ -32,7 +36,7 @@
                Communication with server adapted from 
                http://www.codepool.biz/upload-html-canvas-data-to-php-server.html */
         
-            var canvas = document.querySelector('#canvas');
+            var canvas = document.getElementById('input');
             var ctx = canvas.getContext('2d');
             var mouse = {x: 0, y: 0};
             var last_mouse = {x: 0, y: 0};
@@ -55,7 +59,7 @@
             }, false);
             
             window.onload = function() {
-                var canvas = document.getElementById("canvas");
+                var canvas = document.getElementById("input");
                 var context = canvas.getContext("2d");
                 context.rect(0, 0, 280, 280);
                 context.fillStyle = 'white';
@@ -85,8 +89,8 @@
                 ctx.stroke();
             };
             
-            function clearCanvas() {
-                var canvas = document.getElementById("canvas");
+            function clearCanvas(id) {
+                var canvas = document.getElementById(id);
                 var context = canvas.getContext("2d");
                 context.clearRect(0, 0, canvas.width, canvas.height);
                 context.rect(0, 0, 280, 280);
@@ -128,7 +132,7 @@
                            y: Array(digit.length).fill(margin),
                            mode: 'lines'
                         }];
-                        console.log(data);
+                        drawMatrix('grad-cam', json.gradcam, 28, 10, [255, 0, 0])
                         Plotly.newPlot('histogram', data);
                         
                     }
@@ -137,7 +141,7 @@
                 xhr.send(data);
             }
             function uploadEx() {
-                var canvas = document.getElementById("canvas");
+            var canvas = document.getElementById("input");
                 var context = canvas.getContext("2d");
                 var originalMatrix = context.getImageData(0,0,canvas.width, canvas.height).data;
                 var reducedChannels = reduceChannels(4, originalMatrix);
@@ -148,6 +152,8 @@
                         output.push(tileAverage(i*10, j*10, 10, originalMatrix))
                     }
                 }
+                clearCanvas('grad-cam')
+                drawMatrix('grad-cam', listToMatrix(output,28), 28, 10, [0, 0, 0])
                 upload(output)
             };
             function reduceChannels(nChannels, data){
@@ -187,6 +193,16 @@
                 }
                 avg = avg / (dimension * dimension);
                 return (255 - avg)/255
+            }
+            function drawMatrix(id, matrix, dimension, grain, color){
+                var canv = document.getElementById(id)
+                var cont = canv.getContext("2d")
+                for(j = 0; j < dimension ; j++){
+                    for(i = 0; i < dimension; i++){
+                        cont.fillStyle = 'rgba('+color[0]+', '+color[1]+', '+color[2]+', '+ matrix[j][i] +')';
+                        cont.fillRect(i * grain, j * grain, grain, grain);
+                    }
+                }
             }
         </script>
     </body>
