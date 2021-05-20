@@ -69,7 +69,7 @@ if (mode == "load"):
 if (mode == "sample"):
   batch_size = 1
   train_classes = range(9)
-  ds = tv.datasets.MNIST(root='./', train=True, transform=tv.transforms.ToTensor(), download=True)
+  ds = tv.datasets.MNIST(root='./', train=False, transform=tv.transforms.ToTensor(), download=True)
   ds.targets, ds.data = filter_classes(ds, train_classes)
   dl = to.utils.data.DataLoader(ds, batch_size=batch_size, shuffle=True)
   for x, y in islice(dl, 1):

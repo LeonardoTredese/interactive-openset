@@ -9,31 +9,35 @@
     <body>
         
         
-        <center><h1>Draw a number in the left-hand box</h1></center>
+        <center><h1>Draw a number in the box</h1></center>
         <div style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
             <canvas width="280" height="280" id="input" style="border:1px solid black; float: left">canvas</canvas>
             
             <div style="width: 230px; height: 280px; margin-left: auto; position:relative">
                 <input type="button" onclick="clearCanvas('input')" value="Clear" />
-            </br>
+                </br>
                 <label for="margin">Margin</label>
                 <input type="number" id="margin" min="0.0" step="0.1" max="1.0" /> 
                 <label for="model">Model</label>
                 <input type="number" id="model" min="2" step="1" max="10"/>
                 <span>Read number:</span>
                 <strong id="digit" style="font-size: x-large;"></strong>
+             </div>
         </div>
-        <div>
-            <h2>GRAD-CAM</h2>
-            <canvas width="280" height="280" id="grad-cam" style="border:1px solid black; float: left">canvas</canvas>
+        <center><h1>Choose a number</h1></center>
+        <div id="examples" style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
         </div>
-        </div>
+        <center><h1>Predictions</h1></center>
         <div style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
+            <div>
+                <h2>GRAD-CAM</h2>
+                <canvas width="280" height="280" id="grad-cam" style="border:1px solid black; float: left">canvas</canvas>
+            </div>
             <div style="width: 480px; height: 280px; margin-left: auto; position:relative">
                <h2>results</h2>
                <div id='probabilities'></div>
             </div>
-        <div style="width: 480px; height: 280px; margin-left: auto; position:relative">
+            <div style="width: 480px; height: 280px; margin-left: auto; position:relative">
                <h2>entropy</h2>
                <div id='entropy'></div>
             </div>
@@ -71,8 +75,42 @@
                 context.rect(0, 0, 280, 280);
                 context.fillStyle = 'white';
                 context.fill();
+                getExamples()
             }
-            
+
+        
+           function createExampleCanvas(examples){
+                for(let i = 0; i < examples.length; i++){
+                    let div = createNumberDiv(examples[i].y)
+                    let canv = document.createElement('canvas')
+                    canv.id = `example-${i}`
+                    canv.width = 28;
+                    canv.height = 28;
+                    canv.style.border = "1px solid black";
+                    canv.onclick = () => {
+                        clearCanvas('input')
+                        console.log(examples[i].x[0].length)
+                        drawMatrix('input', examples[i].x[0],280,10,[0,0,0])
+                        uploadEx()
+                    }
+                    div.appendChild(canv)
+                    document.getElementById('examples').appendChild(div)
+                    drawMatrix(canv.id, examples[i].x[0],28,1,[0,0,0])
+                }
+            }
+            function getExamples(){
+                var xhr = new XMLHttpRequest();
+                var url = "http://127.0.0.1:5000/examples"
+                xhr.open("GET", url, true);
+                xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        var json = JSON.parse(xhr.responseText);
+                        createExampleCanvas(json.examples)
+                    }
+                };
+                xhr.send();
+            }
             /* Drawing on Paint App */
             ctx.lineWidth = 10;
             ctx.lineJoin = 'round';
@@ -109,12 +147,20 @@
         <div>
             
         </div>
+
  
         <form method="post" accept-charset="utf-8" name="form1">
             <input name="data" id='data' type="hidden"/>
         </form>
  
         <script>
+            function createNumberDiv(number){
+                let div = document.createElement('div')
+                let strong = document.createElement('strong')
+                strong.innerHTML = number
+                div.appendChild(strong)
+                return div
+            }
 
             function upload(digit){
                 var xhr = new XMLHttpRequest();
@@ -139,22 +185,22 @@
                             name: 'digits'
                         },];
                         var entropyData = [{
-                            x: [entropy],
+                            y: [entropy],
                             type: 'bar',
                             marker: {
                                 color: "orange"
                             },
                             name: 'Entropy of results'
                         }, {
-                            y:[-0.5, 0.5],
-                            x:Array(2).fill(document.getElementById('margin').value),
+                            x:[-0.5, 0.5],
+                            y:Array(2).fill(document.getElementById('margin').value),
                             type: 'line',
                             marker: {
                                 color: "red"
                             },
                             name: 'Entropy of results'
                         }]
-                        // drawMatrix('grad-cam', json.gradcam, 28, 10, [255, 0, 0])
+                        drawMatrix('grad-cam', json.grayScale, 28, 10, [255, 0, 0])
                         Plotly.newPlot('probabilities', probabilities);
                         Plotly.newPlot('entropy', entropyData);
                     }
@@ -163,7 +209,7 @@
                 xhr.send(data);
             }
             function uploadEx() {
-            var canvas = document.getElementById("input");
+                var canvas = document.getElementById("input");
                 var context = canvas.getContext("2d");
                 var originalMatrix = context.getImageData(0,0,canvas.width, canvas.height).data;
                 var reducedChannels = reduceChannels(4, originalMatrix);
@@ -219,8 +265,8 @@
             function drawMatrix(id, matrix, dimension, grain, color){
                 var canv = document.getElementById(id)
                 var cont = canv.getContext("2d")
-                for(j = 0; j < dimension ; j++){
-                    for(i = 0; i < dimension; i++){
+                for(j = 0; j < matrix.length ; j++){
+                    for(i = 0; i < matrix.length; i++){
                         cont.fillStyle = 'rgba('+color[0]+', '+color[1]+', '+color[2]+', '+ matrix[j][i] +')';
                         cont.fillRect(i * grain, j * grain, grain, grain);
                     }
