@@ -25,11 +25,11 @@ def load_saves():
         model.load_state_dict(saves[model_name + "state_dict"])
         model.eval()
         models[model_name] = model
-        cams[model_name] = GradCAM(model=model, target_layer=model.conv2)
+        cams[model_name] = GradCAM(model=model, target_layer=model.conv2, use_cuda=to.cuda.is_available())
     app.logger.info("Finished loading models")   
 
-@app.route("/evaluate/<int:model_id>/<float:unknown_margin>", methods=['post'])
-def evaluate_input(model_id, unknown_margin = 0):
+@app.route("/evaluate/<int:model_id>", methods=['post'])
+def evaluate_input(model_id):
     digit = request.json['digit']
     model_name = "model_%d_" % model_id
     if not (model_name in models):
@@ -38,13 +38,8 @@ def evaluate_input(model_id, unknown_margin = 0):
         return "digit has to be of length %d" % models[model_name].in_dim, 400
     digit = to.FloatTensor(digit).to(device).view(-1,1,28, 28)
     logits = F.softmax(models[model_name](digit), -1)
-    value, prediction = to.max(logits, -1)
-    grayscale = cams[model_name](input_tensor=digit, target_category=prediction)
-    if value >= unknown_margin:
-       prediction = prediction.cpu().numpy().tolist()
-    else:
-       prediction = "unknown"
+    # grayscale = cams[model_name](input_tensor=digit, target_category=prediction)
     logits = logits.detach().numpy().tolist()[0]
-    return { "digit": prediction , "scores": logits, "gradcam": grayscale[0][:].tolist() }, 200
+    return { "logits": logits}, 200
 
     

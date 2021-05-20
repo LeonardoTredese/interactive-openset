@@ -28,9 +28,16 @@
             <canvas width="280" height="280" id="grad-cam" style="border:1px solid black; float: left">canvas</canvas>
         </div>
         </div>
-        <h2>results</h2>
-        <div id='histogram'></div>
-        
+        <div style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
+            <div style="width: 480px; height: 280px; margin-left: auto; position:relative">
+               <h2>results</h2>
+               <div id='probabilities'></div>
+            </div>
+        <div style="width: 480px; height: 280px; margin-left: auto; position:relative">
+               <h2>entropy</h2>
+               <div id='entropy'></div>
+            </div>
+        </div>
         <script type="text/javascript">
             /* Canvas drawing code adapted from https://jsfiddle.net/j3xDg/
                Communication with server adapted from 
@@ -113,28 +120,43 @@
                 var xhr = new XMLHttpRequest();
                 var model = document.getElementById('model').value
                 var margin = document.getElementById('margin').value
-                var url = "http://127.0.0.1:5000/evaluate/" + model +"/" + margin;
+                var url = "http://127.0.0.1:5000/evaluate/" + model;
                 xhr.open("POST", url, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
                 xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
                 xhr.onreadystatechange = function () {
                     if (xhr.readyState === 4 && xhr.status === 200) {
                         var json = JSON.parse(xhr.responseText);
-                        document.getElementById("digit").innerText = json.digit;
-                        var digits =  [...Array(json.scores.length).keys()];
-                        var data = [{
+                        const prediction = json.logits.reduce((iMax, x, i, arr) => x > arr[iMax] ? i : iMax, 0)
+                        const entropyMargin = document.getElementById('margin').value
+                        const entropy = informationEntropy(json.logits)
+                        document.getElementById("digit").innerText = entropy < entropyMargin ? prediction : "unknown";
+                        var digits =  [...Array(json.logits.length).keys()];
+                        var probabilities = [{
                             x: digits,
-                            y: json.scores,
+                            y: json.logits,
                             type: 'bar',
                             name: 'digits'
-                        },{
-                           x: digits,
-                           y: Array(digit.length).fill(margin),
-                           mode: 'lines'
-                        }];
-                        drawMatrix('grad-cam', json.gradcam, 28, 10, [255, 0, 0])
-                        Plotly.newPlot('histogram', data);
-                        
+                        },];
+                        var entropyData = [{
+                            x: [entropy],
+                            type: 'bar',
+                            marker: {
+                                color: "orange"
+                            },
+                            name: 'Entropy of results'
+                        }, {
+                            y:[-0.5, 0.5],
+                            x:Array(2).fill(document.getElementById('margin').value),
+                            type: 'line',
+                            marker: {
+                                color: "red"
+                            },
+                            name: 'Entropy of results'
+                        }]
+                        // drawMatrix('grad-cam', json.gradcam, 28, 10, [255, 0, 0])
+                        Plotly.newPlot('probabilities', probabilities);
+                        Plotly.newPlot('entropy', entropyData);
                     }
                 };
                 var data = JSON.stringify({"digit": digit});
@@ -203,6 +225,10 @@
                         cont.fillRect(i * grain, j * grain, grain, grain);
                     }
                 }
+            }
+
+            function informationEntropy(probabilities) {
+                return -probabilities.reduce((acc, prob) => acc + prob * Math.log2(prob));
             }
         </script>
     </body>
