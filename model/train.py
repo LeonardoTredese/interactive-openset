@@ -20,7 +20,7 @@ def run_epoch(model, dl, accuracy_fn, device):
     for x, y in dl:
         x, y = x.to(device), y.to(device)
         logits = forward_pass(model, x, y)
-        running_acc += [accuracy_fn(logits, y).item()]
+        running_acc += [accuracy_fn(F.log_softmax(logits, dim= -1), y).item()]
         scores += [logits]
         running_loss += [backward_pass(model, logits, y)]
     return np.mean(running_loss), np.mean(running_acc), torch.cat(scores, 0)

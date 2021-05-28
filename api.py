@@ -35,10 +35,10 @@ def evaluate_input(model_id, prediction = -1 ):
         return "digit has to be of length %d" % models[model_name].in_dim, 400
     digit = to.FloatTensor(digit).to(device).view(-1,1,28, 28)
     logits = F.softmax(models[model_name](digit), -1)
-    prediction = to.max(logits, -1)[1] if prediction < 0 else prediction
+    prediction = to.max(logits, -1)[1] if prediction < 0 else to.LongTensor([prediction])
     gray_scale = cams[model_name](input_tensor=digit, target_category=prediction)
     return {
-        "logits": logits[0].detach().numpy().tolist(),
+        "prob": logits[0].detach().numpy().tolist(),
         "grayScale": gray_scale[0].tolist(),
         "pred": prediction[0].detach().numpy().tolist()
         }, 200
