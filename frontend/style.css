@@ -1,5 +1,72 @@
-canvas {
-   height: 100px;
-   width: 100px;
+body {
+   max-width: 1024px;
+   margin: 0 auto;
+   font-family: 'Courier New', Courier, monospace;
+}
+
+.bar-graph {
+   width: 100em;
+   height: 30em;
+}
+
+.big-canvas {
+   height: 280px;
+   width: 280px;
    outline: 1px solid black;
+}
+
+.small-canvas {
+   height: 28px;
+   width: 28px;
+   outline: 1px solid black;
+}
+
+.horizontal-container {
+   display: flex;
+   flex-direction: row;
+}
+
+#digit {
+   font-size: xx-large;
+   font-weight: 500;
+}
+
+h1 {
+   text-align: center;
+}
+
+p {
+   padding: 1em;
+   font-size: medium;
+}
+
+input, select{
+   padding: 0.5em;
+   margin: 0.2em;
+   color: black;
+   background-color: white;
+   border: 1px solid black;
+}
+
+input[type="button"]:hover{
+   color: white;
+   background-color: gray;
+   border: 1px solid black;
+}
+
+input[type="button"]:active{
+   color: white;
+   background-color: black;
+   border: 1px solid black;
+}
+
+.vertical-container {
+   display: flex;
+   flex-direction: column;
+   margin: 0 auto;
+}
+
+label {
+   font-size: large;
+   padding: 0.5em;
 }

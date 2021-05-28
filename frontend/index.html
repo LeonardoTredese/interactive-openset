@@ -5,188 +5,89 @@
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <title>Canvas interface for MNIST-trained digit recognition neural network</title>
         <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
+        <script src="script.js" charset="utf-8"></script>
+        <link rel="stylesheet" href="style.css" />
     </head>
     <body>
-        
-        
-        <center><h1>Draw a number in the left-hand box</h1></center>
-        <div style="width: 800px; margin: 0 auto; justify-content: center; display: flex;align-items: center">
-            <canvas width="280" height="280" id="canvas" style="border:1px solid black; float: left">canvas</canvas>
-            
-            <div style="width: 230px; height: 280px; margin-left: auto; position:relative">
-                <input type="button" onclick="clearCanvas()" value="Clear" />
-            </br>
+        <h1>DRAW A NUMBER</h1>
+        <div class="horizontal-container">
+            <div class="vertical-container">
+                <input type="button" onclick="clearCanvas('input')" value="Clear" />
+                <canvas width="280" height="280" id="input" class="big-canvas"></canvas>
+            </div>
+            <div class="vertical-container">
                 <label for="margin">Margin</label>
-                <input type="number" id="margin" min="0.0" step="0.1" max="1.0" /> 
+                <input type="number" id="margin" min="0.0" step="0.1" value="1" /> 
                 <label for="model">Model</label>
-                <input type="number" id="model" min="2" step="1" max="10"/>
-                <span>Read number:</span>
-                <strong id="digit" style="font-size: x-large;"></strong>
+                <input type="number" id="model" min="2" step="1" max="10" value="7"/>
+             </div>
+        </div>
+        <h1>OR CHOOSE A NUMBER</h1>
+        <div class="vertical-container">
+            <input type="button" onclick="getExamples()" value="Get More Examples" />
+            <div id="examples" class="horizontal-container">
+        </div>
+        <h1>RESULTS</h1>
+        <div class="horizontal container">
+            <div>
+                <h2>Read number:</h2>
+                <strong id="digit"></strong>
+            </div>
+            <div>
+                <p>Because we are representing the <strong>open set recognition</strong> problem
+                   The read number could be either the <strong>number</strong> its self or <strong>unknown</strong>
+                   if the number is detected to belong outside of training classes.
+                </p>
+            </div>
+        </div>    
+        <h2>GRAD-CAM</h2>
+        <div class="horizontal-container">
+            <div class="vertical-container">
+                <div class="horizontal-container">
+                    <label for="grad-cam-attention">Grad-CAM class</label>
+                    <select name="grad-cam-attention" id="grad-cam-attention">
+                        <option value="-1">Predicted class</option>
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                    </select>
+                </div>
+                <canvas width="280" height="280" id="grad-cam" class="big-canvas"></canvas>
+            </div>
+            <div class="vertical-container">
+                <p><strong>Grad-CAM</strong> is a technique that combines both backpropagation and activation values
+                to display what's regarded as "attention" for each pixel in the input image
+            </p>
             </div>
         </div>
-        <h2>results</h2>
-        <div id='histogram'></div>
-        
-        <script type="text/javascript">
-            /* Canvas drawing code adapted from https://jsfiddle.net/j3xDg/
-               Communication with server adapted from 
-               http://www.codepool.biz/upload-html-canvas-data-to-php-server.html */
-        
-            var canvas = document.querySelector('#canvas');
-            var ctx = canvas.getContext('2d');
-            var mouse = {x: 0, y: 0};
-            var last_mouse = {x: 0, y: 0};
-            
-            /* Mouse Capturing Work */
-            canvas.addEventListener('mousemove', function(e) {
-                last_mouse.x = mouse.x;
-                last_mouse.y = mouse.y;
-                
-                /* Modified this to avoid problems with
-                   scrolling the page */
-                if (e.offsetX) {
-                    mouse.x = e.offsetX;
-                    mouse.y = e.offsetY;
-                }
-                else if (e.layerX) {
-                    mouse.x = e.layerX;
-                    mouse.y = e.layerY;
-                }
-            }, false);
-            
-            window.onload = function() {
-                var canvas = document.getElementById("canvas");
-                var context = canvas.getContext("2d");
-                context.rect(0, 0, 280, 280);
-                context.fillStyle = 'white';
-                context.fill();
-            }
-            
-            /* Drawing on Paint App */
-            ctx.lineWidth = 10;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'black';
-            
-            canvas.addEventListener('mousedown', function(e) {
-                canvas.addEventListener('mousemove', onPaint, false);
-            }, false);
-            
-            canvas.addEventListener('mouseup', function() {
-                canvas.removeEventListener('mousemove', onPaint, false);
-                uploadEx()
-            }, false);
-            
-            var onPaint = function() {
-                ctx.beginPath();
-                ctx.moveTo(last_mouse.x, last_mouse.y);
-                ctx.lineTo(mouse.x, mouse.y);
-                ctx.closePath();
-                ctx.stroke();
-            };
-            
-            function clearCanvas() {
-                var canvas = document.getElementById("canvas");
-                var context = canvas.getContext("2d");
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                context.rect(0, 0, 280, 280);
-                context.fillStyle = 'white';
-                context.fill();
-            }
-        </script>
- 
+
         <div>
-            
+            <div>
+               <h2>PROBABILITIES</h2>
+               <div class="horizontal-container">
+                    <div id='probabilities' class="bar-graph"></div>
+                    <p>This graph represents the <strong>probabilities</strong> of which class the given number
+                    belongs to. These <strong>classes</strong> are the ones that the model was <strong>trained</strong> on.</p>
+               </div>
+            </div>
+            <div>
+               <h2>ENTROPY</h2>
+               <div class="horizontal-container">
+                  <div id='entropy' class="bar-graph"></div>
+                   <p>This naive approach to open set recognition uses a margin on <strong>information entropy</strong>
+                     of the probabilities to determine if a class is unknown. This decision is based on the assumption
+                    that the network produces probabilities with high entropy on unknown. It happens to be a poor choice
+                    if the unknown class resembles one of the </p>
+                </div>  
+            </div>
         </div>
- 
-        <form method="post" accept-charset="utf-8" name="form1">
-            <input name="data" id='data' type="hidden"/>
-        </form>
- 
-        <script>
-
-            function upload(digit){
-                var xhr = new XMLHttpRequest();
-                var model = document.getElementById('model').value
-                var margin = document.getElementById('margin').value
-                var url = "http://127.0.0.1:5000/evaluate/" + model +"/" + margin;
-                xhr.open("POST", url, true);
-                xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        var json = JSON.parse(xhr.responseText);
-                        document.getElementById("digit").innerText = json.digit;
-                        var digits =  [...Array(json.scores.length).keys()];
-                        var data = [{
-                            x: digits,
-                            y: json.scores,
-                            type: 'bar',
-                            name: 'digits'
-                        },{
-                           x: digits,
-                           y: Array(digit.length).fill(margin),
-                           mode: 'lines'
-                        }];
-                        Plotly.newPlot('histogram', data);
-                        
-                    }
-                };
-                var data = JSON.stringify({"digit": digit});
-                xhr.send(data);
-            }
-            function uploadEx() {
-                var canvas = document.getElementById("canvas");
-                var context = canvas.getContext("2d");
-                var originalMatrix = context.getImageData(0,0,canvas.width, canvas.height).data;
-                var reducedChannels = reduceChannels(4, originalMatrix);
-                originalMatrix = listToMatrix(reducedChannels, 28*10)
-                var output = [];
-                for(i = 0; i <  28; i++){
-                    for(j = 0; j < 28 ; j++){
-                        output.push(tileAverage(i*10, j*10, 10, originalMatrix))
-                    }
-                }
-                upload(output)
-            };
-            function reduceChannels(nChannels, data){
-                var output = [];
-                var acc = 0;
-                for(var i = 0; i < data.length; i++){
-                    
-                    if ((i % nChannels) == (nChannels -1)){
-                       output.push((acc + data[i]) / nChannels);
-                       acc = 0;
-                    } else {
-                       acc += data[i]
-                    }
-                }
-                return output
-            }            
-            function listToMatrix(list, elementsPerSubArray) {
-                var matrix = [], i, k;
-                for (i = 0, k = -1; i < list.length; i++) {
-                    if (i % elementsPerSubArray === 0) {
-                        k++;
-                        matrix[k] = [];
-                    }
-
-                    matrix[k].push(list[i]);
-                }
-
-                return matrix;
-            }
-          
-            function tileAverage(offsetx, offsety, dimension, data){
-                var avg = 0, i, j;
-                for(i = offsetx; i < dimension + offsetx; i++){
-                    for(j = offsety; j < dimension + offsety; j++){
-                         avg += data[i][j]
-                    }
-                }
-                avg = avg / (dimension * dimension);
-                return (255 - avg)/255
-            }
-        </script>
     </body>
 </html>
